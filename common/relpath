@@ -1,0 +1,109 @@
+#!/bin/bash
+
+function relpath() {
+    if [[ $1 == --test ]]; then
+        relpath_test
+        return
+    fi
+
+    if (( $# < 2 )); then
+        >&2 echo "Usage: ${0##*/} <symlink path> <source path>"
+        return 1
+    fi
+
+    # convert double slash to single slash
+    symlink=${1//\/\///}
+    source=${2//\/\///}
+
+    [[ $symlink == */ ]] && { >&2 echo "symlink path should not ended with /"; return 1; }
+    [[ $symlink != /* && $symlink != ./* ]] && { >&2 echo "symlink path should be started with / or ./"; return 1; }
+    [[ $source != /* && $source != ./* ]] && { >&2 echo "source path should be started with / or ./"; return 1; }
+    [[ ($source == /* && $symlink != /*) || ($source != /* && $symlink == /*) ]] && { >&2 echo "symlink path should be both started with same prefix(/ or ./)"; return 1; }
+    [[ $source == "$symlink"/* ]] && { >&2 echo "symlink path is impossible to be base dir of source path"; return 1; }
+    [[ $source == "$symlink" ]] && { >&2 echo "symlink path should not be equal to source path"; return 1; }
+
+    # remove trailing slash
+    [[ $source != / ]] && source="${source%/}"
+
+    result=
+
+    # split source and symlink path into array by slash
+    IFS=/ && s=($source) && t=($symlink) && unset IFS
+    # remove common parts
+    while true; do
+        # compare first part
+        [[ "${s[0]}" != "${t[0]}" ]] && break
+        # remove first part from array
+        s=("${s[@]:1}")
+        t=("${t[@]:1}")
+    done
+
+    count=${#t[@]}
+    if (($count >= 2)); then
+        for ((i=1; i<=$count-1; i++)); do
+            result=../$result;
+        done
+    else
+        result=.
+    fi
+
+    count=${#s[@]}
+    for ((i=0; i<=$count-1; i++)); do
+        result=$result/"${s[$i]}"
+    done
+
+    # convert double slash to single slash
+    result="${result/\/\///}"
+    # remove trailing slash
+    result="${result%/}"
+    # remove head ./
+    result="${result#./}"
+
+    printf '%s\n' "$result"
+}
+
+function relpath_test_() {
+    printf '%-14s ->  %-17s ->  %s\n' "$1" "$2" "$(relpath "$1" "$2")"
+}
+
+function relpath_test() {
+    relpath_test_ /a /
+    relpath_test_ /a/b /
+    relpath_test_ /a/b /a
+    relpath_test_ /a/b/c /a
+    relpath_test_ /a/b/c /a/b
+    relpath_test_ /a/b/c /a/b/CC
+    relpath_test_ /a/b/c/d/e /a
+    relpath_test_ /a/b/c/d/e /a/b
+    relpath_test_ /a/b/c/d/e /a/b/CC
+    relpath_test_ /a/b/c/d/e /a/b/CC/DD/EE
+    relpath_test_ ./a ./
+    relpath_test_ ./a/b ./
+    relpath_test_ ./a/b ./a
+    relpath_test_ ./a/b/c ./a
+    relpath_test_ ./a/b/c ./a/b
+    relpath_test_ ./a/b/c ./a/b/CC
+    relpath_test_ ./a/b/c/d/e ./a
+    relpath_test_ ./a/b/c/d/e ./a/b/CC
+    relpath_test_ ./a/b/c/d/e ./a/b/CC/DD/EE
+    relpath_test_ /a /x
+    relpath_test_ /a/b /x
+    relpath_test_ /a/b/c /x
+    relpath_test_ /a /x/y
+    relpath_test_ /a/b /x/y
+    relpath_test_ /a/b/c /x/y
+    relpath_test_ /x /a
+    relpath_test_ /x /a/b
+    relpath_test_ /x /a/b/c
+    relpath_test_ /x/y /a
+    relpath_test_ /x/y /a/b
+    relpath_test_ /x/y /a/b/c
+
+    relpath_test_ "./a a"/b/c/d/e "./a a"/b/CC/DD/EE
+    relpath_test_ "/x x/y y" "/a a/b b/c c"
+}
+
+if [[ $_ == "$(type -p "$0")" ]]; then
+    # if invoked from a sub shell instead of a source command
+    relpath "$@"
+fi

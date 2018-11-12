@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# sample:  sshx strict-login-server ssh another-server
+
+: ${1:?expect an argument as ssh server}
+
+expect -f <(cat <<EOF
+spawn ssh "$1"
+expect "*@*"
+send "${@:2}\r\n"
+interact
+EOF
+)

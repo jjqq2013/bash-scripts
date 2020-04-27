@@ -1,0 +1,4 @@
+#!/bin/bash
+docker run -it --privileged --net=host --ipc=host --pid=host --uts=host --userns=host \
+  -v /dev:/dev -v /lib/modules:/lib/modules  -v /sys:/sys \
+  linuxkit-bcc-compiled-by-me:with-entrypoint "$@"

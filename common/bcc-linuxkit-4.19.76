@@ -1,4 +1,4 @@
 #!/bin/bash
-docker run -it --privileged --net=host --ipc=host --pid=host --uts=host --userns=host \
+docker run --rm --interactive --tty --privileged --net=host --ipc=host --pid=host --uts=host --userns=host \
   -v /dev:/dev -v /lib/modules:/lib/modules  -v /sys:/sys \
   osexp2000/bcc-tools-for-linuxkit:4.19.76 "$@"

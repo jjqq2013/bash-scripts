@@ -1,7 +1,4 @@
 #!/bin/bash
-
-((i=0))
-for arg in "$@"; do
-	printf "arg%d: %s\n" $i "$arg"
-	((i++))
+for a in "$@"; do
+  echo 'arg <'"$a"'>'
 done

@@ -1,4 +1,4 @@
 #!/bin/bash
 for a in "$@"; do
-  echo 'arg <'"$a"'>'
+  echo arg$((++i))="$a"
 done
